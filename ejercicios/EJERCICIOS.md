@@ -97,9 +97,10 @@ puedes ni levantar ni depurar nada.
 ### Tarea
 
 1. Ejecuta un contenedor de `alpine:3.21` que imprima un mensaje y termine.
-2. Ejecuta otro, esta vez **en segundo plano**, que se quede vivo 5 minutos.
+2. Ejecuta otro, esta vez **en segundo plano**, que se quede vivo generando
+   actividad (por ejemplo, imprimiendo un contador cada pocos segundos).
 3. Compruébalo con `docker ps`. Ahora prueba `docker ps -a`. ¿Qué cambia?
-4. Mira sus logs, párale y bórralo.
+4. Mira sus logs **en tiempo real**, párale y bórralo.
 
 ### Solución
 
@@ -110,28 +111,37 @@ puedes ni levantar ni depurar nada.
 # 1. En primer plano: se ejecuta, imprime y el contenedor termina
 docker run alpine:3.21 echo "Hola desde un contenedor"
 
-# 2. En segundo plano (-d = detached), con un nombre para referirnos a él
-docker run -d --name prueba alpine:3.21 sleep 300
+# 2. En segundo plano (-d = detached), con un nombre para referirnos a él.
+#    En vez de un simple `sleep`, este contenedor genera actividad real
+#    (un contador infinito) para que los logs tengan algo que mostrar.
+docker run -d --name contador alpine:3.21 sh -c \
+  'i=1; while true; do echo "Contando: $i"; i=$((i+1)); sleep 2; done'
 
 # 3. Solo contenedores en ejecución / todos, incluidos los terminados
 docker ps
 docker ps -a
 
-# 4. Logs, parada y borrado
-docker logs prueba
-docker stop prueba
-docker rm prueba
+# 4. Logs en tiempo real (-f = follow, como un `tail -f`), parada y borrado
+docker logs -f contador
+# Ctrl+C para salir del seguimiento (el contenedor sigue corriendo)
+docker stop contador
+docker rm contador
 ```
 
 `docker ps` muestra solo lo que está corriendo. `docker ps -a` muestra
 también los `Exited` — ahí verás el del paso 1, que ya terminó pero **sigue
 existiendo** ocupando espacio hasta que lo borres.
 
+Con `docker logs -f contador` verás aparecer nuevas líneas cada 2 segundos
+mientras el contenedor sigue vivo — es la mejor forma de comprobar que
+`docker logs` no es una foto fija, sino que puede seguir la salida en
+directo. Con un `sleep` a secas no habría ninguna línea nueva que ver.
+
 </details>
 
 ### Validación
 
-`docker ps -a` no lista ningún contenedor llamado `prueba`.
+`docker ps -a` no lista ningún contenedor llamado `contador`.
 
 > **Truco**: añade `--rm` (`docker run --rm alpine:3.21 echo hola`) y el
 > contenedor se autoelimina al terminar. Úsalo siempre para pruebas rápidas.
@@ -409,6 +419,133 @@ pandas==2.2.3
 - Si mañana añades `pandas` al `requirements.txt`, ¿qué capas se reconstruyen?
 - ¿Qué diferencia hay entre hacer esto y ejecutar
   `docker compose exec airflow-scheduler pip install duckdb`?
+
+---
+
+## Ejercicio 5 bis ⭐ (opcional, en grupo) — Construye, publica y comparte tu imagen en Docker Hub (15 min)
+
+**Objetivo**: vivir en primera persona el ciclo completo **build → push → pull
+→ run**, y comprobar que una imagen se ejecuta de forma idéntica en cualquier
+máquina, sin importar quién la construyó.
+
+**Por qué te importa**: es la demostración más contundente de qué resuelve
+Docker. "En mi máquina funciona" deja de ser un problema cuando lo que se
+comparte no es el código, sino un entorno completo ya empaquetado.
+
+**Conceptos**:
+[§3.2](./TEORIA.md#32-de-la-teoría-a-la-práctica-crear-tu-propia-imagen-a-partir-de-una-oficial),
+[§3.3](./TEORIA.md#33-registries--dónde-viven-las-imágenes),
+[§3.4](./TEORIA.md#34-nombrado-de-imágenes--la-sintaxis-completa)
+
+**Dinámica**: este ejercicio se hace **en grupo**. Una persona voluntaria
+construye y publica la imagen; el resto de la clase solo la descarga y
+ejecuta, sin haber visto el código ni instalado nada de Python.
+
+### Parte A — La persona voluntaria: crear y publicar la imagen (10 min)
+
+#### A.1 Crear una cuenta en Docker Hub
+
+1. Entra en [hub.docker.com/signup](https://hub.docker.com/signup).
+2. Regístrate con un email y elige un **nombre de usuario** — será el
+   prefijo de todas tus imágenes publicadas, apúntalo bien.
+3. Verifica el email si te lo pide.
+4. Inicia sesión desde la terminal:
+
+   ```bash
+   docker login
+   # Username: tu_usuario_dockerhub
+   # Password: (ver nota de seguridad abajo)
+   ```
+
+> **Nota de seguridad**: en vez de tu contraseña real, Docker Hub permite
+> crear un **Access Token** (Account Settings → Security → New Access
+> Token) para usar en la CLI. Es revocable en cualquier momento sin cambiar
+> tu contraseña — evita meter tu contraseña real en la terminal.
+
+#### A.2 Escribe el generador de datos
+
+Crea `sandbox/dataset-demo/generador.py`, usando `pandas` y `numpy` para
+producir un dataset aleatorio con timestamps:
+
+```python
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+
+np.random.seed()  # sin semilla fija: cada ejecución da datos distintos
+n = 10
+ahora = datetime.now()
+
+df = pd.DataFrame({
+    "id": range(1, n + 1),
+    "timestamp": [ahora - timedelta(minutes=i * 5) for i in range(n)],
+    "temperatura": np.round(np.random.uniform(15, 30, n), 2),
+    "humedad": np.round(np.random.uniform(30, 90, n), 2),
+})
+
+print(df.to_string(index=False))
+```
+
+#### A.3 Escribe el Dockerfile
+
+`sandbox/dataset-demo/Dockerfile`:
+
+```dockerfile
+FROM python:3.13-slim
+WORKDIR /app
+RUN pip install --no-cache-dir pandas numpy
+COPY generador.py .
+CMD ["python", "generador.py"]
+```
+
+#### A.4 Construye, prueba y publica
+
+El nombre de la imagen **debe** llevar tu usuario de Docker Hub como
+prefijo — es lo que le dice a Docker a qué cuenta subirla:
+
+```bash
+cd sandbox/dataset-demo
+
+# Construye con TU usuario como prefijo
+docker build -t tu_usuario_dockerhub/dataset-demo:1.0 .
+
+# Pruébala en local antes de compartirla
+docker run --rm tu_usuario_dockerhub/dataset-demo:1.0
+
+# Publícala en Docker Hub
+docker push tu_usuario_dockerhub/dataset-demo:1.0
+```
+
+Comparte en el chat de la clase el nombre completo, por ejemplo:
+`ana_devops/dataset-demo:1.0`.
+
+### Parte B — El resto de la clase: descargar y ejecutar (5 min)
+
+Sin haber visto una línea del código, sin instalar Python, sin instalar
+`pandas` ni `numpy`:
+
+```bash
+docker pull tu_usuario_dockerhub/dataset-demo:1.0
+docker run --rm tu_usuario_dockerhub/dataset-demo:1.0
+```
+
+### Validación
+
+Cada persona de la clase, ejecutando el mismo comando, obtiene una tabla con
+las mismas columnas (los valores cambian, porque el script genera datos
+aleatorios en cada ejecución) — sin haber tocado ni una línea de Python ni
+instalado ninguna dependencia.
+
+### Para pensar
+
+- ¿Qué habrías tenido que hacer, **sin Docker**, para que todo el mundo
+  pudiera ejecutar este script? (pista: instalar Python, la versión
+  correcta, `pandas`, `numpy`, resolver conflictos de versiones...)
+- Los datos cambian en cada ejecución, pero el **entorno** (versión exacta
+  de Python, de `pandas`, de `numpy`) es idéntico para todos. ¿Por qué es
+  justo eso lo que resuelve Docker?
+- ¿Qué pasaría si la persona voluntaria hubiera publicado con el tag
+  `latest` en vez de `1.0`, y más tarde subiera encima una versión rota?
 
 ---
 
