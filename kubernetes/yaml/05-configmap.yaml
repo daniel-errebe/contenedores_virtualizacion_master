@@ -1,0 +1,8 @@
+# Lab 3a — ConfigMap con configuración no sensible
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+data:
+  APP_ENV: "produccion"
+  APP_MENSAJE: "Hola desde el ConfigMap"

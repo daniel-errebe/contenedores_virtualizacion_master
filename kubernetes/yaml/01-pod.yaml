@@ -1,0 +1,14 @@
+# Lab 1a — Un Pod suelto (solo para ver por qué NO se usa así en producción)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-pod
+  labels:
+    app: web-demo
+spec:
+  containers:
+    - name: web
+      # Sustituye por tu propia imagen del bloque de Docker, ej: tuusuario/mi-app:1.0
+      image: nginx:1.25
+      ports:
+        - containerPort: 80

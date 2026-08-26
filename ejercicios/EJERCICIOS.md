@@ -6,6 +6,7 @@
 > (Universidad de Helsinki, CC BY-NC-SA), reenfocados hacia el trabajo real
 > con stacks de datos.
 
+⚠️ Instalación previa: **[REQUISITOS.md](./REQUISITOS.md)** ← empieza por aquí
 Teoría de apoyo: **[TEORIA.md](./TEORIA.md)**
 Ejercicios de ampliación: **[EJERCICIOS_EXTRA.md](./EJERCICIOS_EXTRA.md)**
 Si algo falla: **[TEORIA.md § Apéndice B](./TEORIA.md#apéndice-b--cuando-algo-falla)**
@@ -13,6 +14,10 @@ Si algo falla: **[TEORIA.md § Apéndice B](./TEORIA.md#apéndice-b--cuando-algo
 ---
 
 ## Antes de la clase (obligatorio)
+
+> Si aún no tienes Docker instalado y funcionando, para y ve primero a
+> **[REQUISITOS.md](./REQUISITOS.md)**: cubre la instalación en macOS, Windows
+> (WSL) y Linux, las alternativas a Docker Desktop y los problemas típicos.
 
 La imagen de Airflow pesa ~1,5 GB. Si la descargas en clase, pierdes media
 sesión esperando. **Haz esto en casa, con buena conexión:**
@@ -32,6 +37,10 @@ docker pull alpine:3.21
 **Requisitos**: Docker Desktop (o Docker Engine) y **al menos 4 GB de RAM
 asignados a Docker** (Docker Desktop → Settings → Resources). Con menos, el
 stack completo de Airflow irá muy lento.
+
+La lista completa de requisitos, con instrucciones para cada sistema
+operativo y una verificación final paso a paso, está en
+**[REQUISITOS.md](./REQUISITOS.md)**.
 
 ---
 
