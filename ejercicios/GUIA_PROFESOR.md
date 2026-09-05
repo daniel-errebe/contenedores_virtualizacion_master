@@ -131,6 +131,41 @@ Compose). Son los dos que van a usar en su primer día de trabajo.
 
 ---
 
+## 6 bis. La sesión de Kubernetes: plan B si minikube falla
+
+Aunque [REQUISITOS.md](./REQUISITOS.md) obliga a arrancar el cluster **antes**
+de clase, cada año hay dos o tres portátiles que no levantan. Ten esto
+decidido de antemano, en vez de improvisarlo con la clase parada.
+
+| Síntoma | Qué hacer en el momento |
+|---|---|
+| `minikube start` se queda colgado | `minikube delete && minikube start --driver=docker`. Si pasa de 3 min, plan B. |
+| No hay RAM para los 4 GB | `minikube start --memory=2560 --cpus=2`. Sobra para los ejercicios 1-5. |
+| Docker Desktop no arranca (WSL2) | No se arregla en clase. Plan B directo. |
+| `ImagePullBackOff` con su propia imagen | No hizo el `docker push`. Que use la de un compañero mientras la sube. |
+
+**El plan B, en orden:**
+
+1. **Emparejar.** Dos alumnos, un portátil. Teclea el que tiene el cluster
+   roto y dicta el otro. Funciona mejor de lo que parece y no pierdes a nadie.
+2. **Un cluster proyectado.** Tú aplicas los manifiestos que escriben ellos.
+   Se pierde el músculo de la terminal, no el concepto.
+3. **Terminal en el navegador.** Con wifi decente, un *playground* de
+   Kubernetes (Killercoda, Play with Kubernetes) da un cluster real durante
+   una hora sin instalar nada. Sirve para los ejercicios 1, 2, 3 y 5; el 4
+   depende del *storage class* del entorno.
+
+Decide en los **primeros 20 minutos** — el bloque 0 existe justo para esto —
+quién sigue con su cluster y quién pasa a plan B. No dejes a nadie peleándose
+con la instalación durante el ejercicio 1.
+
+**Si vas justo de tiempo en Kubernetes**, recorta en este orden: ejercicio 6
+(ya está marcado como opcional) → el reto de diagnóstico a ciegas → ejercicio 3
+(hazlo en proyección). **Nunca recortes** los ejercicios 4 y 5: la persistencia
+y el CronJob son lo único de esta sesión que van a usar tal cual en su trabajo.
+
+---
+
 ## 7. Agujeros de conejo que evitar
 
 Estos temas surgirán en preguntas. Responde brevemente y **sigue adelante**;
@@ -142,9 +177,9 @@ son de perfil DevOps y no aportan a un Data Engineer en su primera sesión.
 | Multi-stage builds | "Sirve para reducir el tamaño de la imagen. Se ve en el módulo de optimización." |
 | Docker vs máquina virtual (a fondo) | Quédate en la tabla de §1. Namespaces y cgroups no aportan hoy. |
 | Redes personalizadas / `network_mode` | "Compose crea la red por ti y en el 99 % de los casos es la que quieres." |
-| Seguridad, usuarios root, escaneo de imágenes | "Módulo de *Security and Optimization*, fuera del alcance de hoy." |
+| Seguridad, escaneo de imágenes, *hardening* | "Módulo de *Security and Optimization*, fuera del alcance de hoy." Ojo: los **permisos de un bind mount** sí se ven hoy (sección 3), y son otra cosa. |
 | Podman / Rancher / alternativas | "Los comandos son casi idénticos. Lo que aprendes hoy te vale." |
-| ARM vs x86 (Mac con Apple Silicon) | Solo si da problemas real: `platform: linux/amd64` en el servicio. |
+| ARM vs x86 (Mac con Apple Silicon) | Hay diapositiva propia en la sección 4. Quédate en `--platform linux/amd64` y sigue. |
 
 ---
 

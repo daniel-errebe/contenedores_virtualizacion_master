@@ -62,9 +62,30 @@ arranca. Eso es exactamente lo que necesita un Data Engineer.
 
 ---
 
+## Leyendas de esta guía
+
+Cada sección está marcada para indicar en qué contexto la necesitas:
+
+- **🟢 Leer antes de clase** — es preparación previa obligatoria para no llegar perdido. Base para los ejercicios.
+- **🔵 Se explica en directo** — durante la sesión se desarrolla en tiempo real. Viene bien haber visto antes el resumen, pero se redunda en clase.
+- **⚪ Referencia** — está aquí por si lo necesitas después, cuando trabajas con Kubernetes. Valioso pero no crítico para las 2 h 30 de la sesión.
+
+### Mínimo viable de lectura
+
+**Si vas justo de tiempo**, aquí está el camino mínimo (aprox. 45 min) para entender los ejercicios:
+
+1. **Sección 3** (§3 — Anatomía de YAML): 15 min. Sin esto no sabes leer ni escribir un manifiesto.
+2. **Sección 4** (§4 — Pod/Deployment): 10 min. Qué es cada cosa y por qué Deployment en lugar de Pod solo.
+3. **Sección 5** (§5 — Services): 10 min. Cómo expones tu aplicación.
+4. **Sección 9** (§9 — Job/CronJob): 10 min. El ejercicio 5 es el corazón de la sesión.
+
+Con eso tienes espina dorsal del módulo. El resto enriquece, pero los 4 de arriba son el mínimo.
+
+---
+
 ## Parte I — Conceptos
 
-### 1. ¿Por qué Kubernetes? De un contenedor a un cluster
+### 1. 🔵 ¿Por qué Kubernetes? De un contenedor a un cluster
 
 En la sesión de Docker terminaste con un `docker-compose.yml` que levanta
 Airflow y Postgres. Funciona perfectamente... **en tu portátil**. Ahora
@@ -140,7 +161,7 @@ porque el estado real dejó de coincidir con el deseado y el bucle lo corrigió.
 
 ---
 
-### 2. Arquitectura de un cluster
+### 2. ⚪ Arquitectura de un cluster
 
 Un cluster tiene dos tipos de máquinas (nodos): el **control plane** (el
 cerebro, que decide) y los **workers** (los músculos, donde corren tus
@@ -208,7 +229,7 @@ contenedores).
 
 ---
 
-### 3. Anatomía de un manifiesto YAML
+### 3. 🟢 Anatomía de un manifiesto YAML
 
 Todo en Kubernetes se describe con la misma estructura de 4 campos. Aprende
 esto una vez y sabrás leer cualquier manifiesto:
@@ -281,7 +302,7 @@ tu equipo de datos probablemente tendrá el suyo propio.
 
 ---
 
-### 4. Pod, ReplicaSet y Deployment
+### 4. 🟢 Pod, ReplicaSet y Deployment
 
 #### 4.1 El Pod — la unidad mínima
 
@@ -382,7 +403,7 @@ entonces mata uno viejo. El número de Pods disponibles **nunca llega a cero**.
 
 ---
 
-### 5. Services y red interna
+### 5. 🟢 Services y red interna
 
 #### 5.1 El problema
 
@@ -456,7 +477,7 @@ temporal.
 
 ## Parte II — Aplicaciones reales
 
-### 6. Configuración: ConfigMaps y Secrets
+### 6. 🔵 Configuración: ConfigMaps y Secrets
 
 En la sesión de Docker viste que **no se mete la configuración dentro de la
 imagen**: se pasa con `-e` o con un archivo `.env`. La misma imagen sirve para
@@ -540,7 +561,7 @@ stringData:                    # stringData = texto plano, K8s lo codifica solo
 
 ---
 
-### 7. Almacenamiento: volúmenes, PV y PVC
+### 7. 🔵 Almacenamiento: volúmenes, PV y PVC
 
 El sistema de archivos de un contenedor es efímero — esto ya lo sufriste en el
 Ejercicio 2 de Docker. En Kubernetes es peor: los Pods no solo se paran, se
@@ -614,7 +635,7 @@ Y se usa en el Pod exactamente como un volumen de Docker:
 
 ---
 
-### 8. Salud y recursos: probes, requests y limits
+### 8. 🔵 Salud y recursos: probes, requests y limits
 
 Esto es lo que separa un despliegue de juguete de uno de producción.
 
@@ -707,7 +728,7 @@ en la práctica de hoy.
 
 ---
 
-### 9. Cargas por lotes: Job y CronJob
+### 9. 🟢 Cargas por lotes: Job y CronJob
 
 Hasta ahora todo eran servicios que corren **para siempre** (un servidor web,
 una base de datos). Pero gran parte del trabajo de un Data Engineer son
@@ -798,7 +819,7 @@ empresas que corren Airflow sobre K8s.
 
 ## Parte III — Práctica
 
-### 10. minikube: tu cluster local
+### 10. 🟢 minikube: tu cluster local
 
 **minikube** levanta un cluster de Kubernetes de un solo nodo dentro de una VM
 o de un contenedor Docker en tu máquina. Es el estándar para aprender y para
@@ -854,7 +875,7 @@ minikube ip                                     # la IP del nodo
 
 ---
 
-### 11. Del `docker-compose.yml` al manifiesto de Kubernetes
+### 11. ⚪ Del `docker-compose.yml` al manifiesto de Kubernetes
 
 Aquí es donde todo lo de la sesión anterior encaja. Este es el mismo servicio
 en los dos mundos:
@@ -971,7 +992,7 @@ principal).
 
 ---
 
-## Apéndice A — Chuleta de `kubectl`
+## Apéndice A — ⚪ Chuleta de `kubectl`
 
 ```bash
 # ── Ver qué hay ────────────────────────────────────────────────
@@ -1016,7 +1037,7 @@ kubectl config set-context --current --namespace=datos     # cambiar el actual
 
 ---
 
-## Apéndice B — Cuando algo falla
+## Apéndice B — ⚪ Cuando algo falla
 
 **El comando universal**: `kubectl describe pod <nombre>` y lee la sección
 **Events** del final. Ahí está la causa el 80% de las veces.

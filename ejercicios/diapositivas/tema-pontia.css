@@ -1,0 +1,744 @@
+/*
+ * tema-pontia.css — Tema Marp que replica la estética del Máster PontIA
+ *
+ * Paleta extraída del PDF de referencia
+ * "2026-08 PontIA - Máster DE - Módulo Linux y terminal":
+ *   #F6FAB2  lima claro   (fondo de diapositiva destacada)
+ *   #163932  verde oscuro (divisores de sección)
+ *   #111E2D  azul marino  (diapositivas de ejercicio)
+ *   #0A111A  casi negro   (bloques de terminal)
+ *
+ * Uso:
+ *   marp sesion-1-docker-fundamentos.md --theme-set tema-pontia.css -o salida.html
+ *   marp sesion-1-docker-fundamentos.md --theme-set tema-pontia.css --pdf
+ *   marp sesion-1-docker-fundamentos.md --theme-set tema-pontia.css --pptx
+ *
+ * @theme pontia
+ */
+
+@import 'default';
+
+:root {
+  --lima: #f6fab2;
+  --lima-suave: #fbfdd9;
+  --verde: #163932;
+  --verde-claro: #2a5c4f;
+  --navy: #111e2d;
+  --code-bg: #0a111a;
+  --acento: #d8ea7c;
+  --acento-fuerte: #c3dc4e;
+  --tinta: #16181a;
+  --tinta-suave: #4b5563;
+  --gris-fila: #f4f4ef;
+  --gris-linea: #e2e2d8;
+  --blanco: #ffffff;
+
+  --fuente: 'Roboto', 'Helvetica Neue', 'Inter', -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --mono: 'Roboto Mono', 'SF Mono', 'JetBrains Mono', 'Menlo', 'Consolas',
+    monospace;
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+
+section {
+  width: 960px;
+  height: 540px;
+  /* El hueco superior reserva sitio para el título, que va posicionado
+     de forma absoluta; el resto del contenido se centra verticalmente,
+     igual que en la plantilla de referencia. */
+  padding: 108px 56px 68px 56px;
+  background: var(--blanco);
+  color: var(--tinta);
+  font-family: var(--fuente);
+  font-size: 19px;
+  line-height: 1.45;
+  letter-spacing: 0.1px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Título de diapositiva: grande, ligero, anclado arriba a la izquierda */
+section h1 {
+  position: absolute;
+  top: 40px;
+  left: 56px;
+  right: 56px;
+  font-size: 31px;
+  font-weight: 400;
+  line-height: 1.15;
+  margin: 0;
+  color: var(--tinta);
+  letter-spacing: -0.3px;
+}
+
+/* Subtítulo: pequeño, atenuado, justo debajo del título */
+section h2 {
+  position: absolute;
+  top: 79px;
+  left: 56px;
+  right: 56px;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--tinta-suave);
+  margin: 0;
+  letter-spacing: 0.1px;
+}
+
+/* Código en línea dentro del título: discreto, sin caja llamativa */
+section h1 code {
+  font-size: 0.86em;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-weight: 500;
+}
+
+/* Contenido pegado arriba en vez de centrado */
+section.arriba {
+  justify-content: flex-start;
+}
+
+/* Diapositivas sin título: recupera el espacio superior */
+section.sin-titulo {
+  padding-top: 48px;
+}
+
+/* Encabezado interno de columna o bloque */
+section h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--verde);
+  margin: 0 0 8px 0;
+}
+
+section h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--tinta-suave);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 6px 0;
+}
+
+section p {
+  margin: 0 0 12px 0;
+}
+
+section ul,
+section ol {
+  margin: 0 0 12px 0;
+  padding-left: 22px;
+}
+
+section li {
+  margin-bottom: 7px;
+}
+
+section li::marker {
+  color: var(--verde-claro);
+}
+
+section strong {
+  font-weight: 700;
+}
+
+section em {
+  font-style: italic;
+  color: var(--tinta-suave);
+}
+
+section a {
+  color: var(--verde);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+section hr {
+  border: none;
+  border-top: 1px solid var(--gris-linea);
+  margin: 14px 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Pie de página                                                       */
+/* ------------------------------------------------------------------ */
+
+section::after {
+  /* número de diapositiva */
+  position: absolute;
+  right: 40px;
+  bottom: 22px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--tinta-suave);
+  opacity: 0.75;
+  content: attr(data-marpit-pagination);
+}
+
+section footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 20px;
+  padding: 0 40px;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--tinta-suave);
+  opacity: 0.8;
+  letter-spacing: 0.2px;
+}
+
+section footer::before {
+  content: 'pontIA';
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  margin-right: 22px;
+  opacity: 1;
+}
+
+/* Filete sutil sobre el pie */
+section::before {
+  content: '';
+  position: absolute;
+  left: 40px;
+  right: 40px;
+  bottom: 42px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.12;
+}
+
+/* ------------------------------------------------------------------ */
+/* Variantes de fondo                                                  */
+/* ------------------------------------------------------------------ */
+
+/* <!-- _class: lima --> fondo amarillo lima, texto oscuro */
+section.lima {
+  background: var(--lima);
+}
+section.lima h3 {
+  color: var(--verde);
+}
+
+/* <!-- _class: verde --> fondo verde oscuro */
+section.verde,
+section.seccion {
+  background: var(--verde);
+  color: #eef2ec;
+}
+section.verde h1,
+section.seccion h1 {
+  color: var(--acento);
+}
+section.verde h2,
+section.seccion h2 {
+  color: #b9c9c0;
+}
+section.verde h3,
+section.seccion h3 {
+  color: var(--acento);
+}
+section.verde h4,
+section.seccion h4,
+section.verde em,
+section.seccion em {
+  color: #9db3a8;
+}
+section.verde strong,
+section.seccion strong {
+  color: var(--acento);
+}
+section.verde li::marker,
+section.seccion li::marker {
+  color: var(--acento);
+}
+section.verde a,
+section.seccion a {
+  color: var(--acento);
+}
+section.verde footer,
+section.seccion footer,
+section.verde::after,
+section.seccion::after {
+  color: #cfe0d6;
+}
+
+/* <!-- _class: navy --> fondo azul marino, para ejercicios */
+section.navy,
+section.reto {
+  background: var(--navy);
+  color: #e8edf4;
+}
+section.navy h1,
+section.reto h1 {
+  color: var(--acento);
+}
+section.navy h2,
+section.reto h2 {
+  color: #9fb0c4;
+}
+section.navy h3,
+section.reto h3 {
+  color: var(--acento-fuerte);
+}
+section.navy h4,
+section.reto h4,
+section.navy em,
+section.reto em {
+  color: #8b9cb2;
+}
+section.navy strong,
+section.reto strong {
+  color: var(--acento);
+}
+section.navy li::marker,
+section.reto li::marker {
+  color: var(--acento-fuerte);
+}
+section.navy a,
+section.reto a {
+  color: var(--acento);
+}
+section.navy footer,
+section.reto footer,
+section.navy::after,
+section.reto::after {
+  color: #b7c4d4;
+}
+
+/* ------------------------------------------------------------------ */
+/* Portada                                                             */
+/* ------------------------------------------------------------------ */
+
+section.portada {
+  background: var(--lima);
+  justify-content: center;
+  padding: 56px 72px 72px 72px;
+}
+section.portada h1 {
+  position: static;
+  font-size: 52px;
+  font-weight: 400;
+  line-height: 1.12;
+  max-width: 660px;
+  margin: 0 0 26px 0;
+  letter-spacing: -1px;
+}
+section.portada h2 {
+  position: static;
+  font-size: 17px;
+  color: var(--tinta);
+  opacity: 0.75;
+  margin: 0 0 4px 0;
+}
+section.portada p {
+  font-size: 15px;
+  color: var(--tinta-suave);
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Divisor de sección                                                  */
+/* ------------------------------------------------------------------ */
+
+section.seccion {
+  justify-content: center;
+  padding: 56px 72px 72px 72px;
+}
+section.seccion h1 {
+  position: static;
+  font-size: 46px;
+  font-weight: 400;
+  letter-spacing: -0.8px;
+  margin: 0 0 22px 0;
+}
+section.seccion h2 {
+  position: static;
+  font-size: 18px;
+  font-weight: 400;
+  max-width: 620px;
+  line-height: 1.5;
+  color: #d6e2da;
+  margin: 0;
+}
+
+/* Presupuesto de tiempo acumulado, arriba a la derecha del divisor */
+.reloj {
+  position: absolute;
+  top: 46px;
+  right: 56px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: #8b9cb2;
+}
+
+/* Número en círculo, arriba a la izquierda */
+.num {
+  position: absolute;
+  top: 34px;
+  left: 56px;
+  width: 44px;
+  height: 44px;
+  border: 1.5px solid var(--acento);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  font-weight: 400;
+  color: var(--acento);
+}
+
+/* ------------------------------------------------------------------ */
+/* Bloques de código: ventana de terminal estilo macOS                 */
+/* ------------------------------------------------------------------ */
+
+section pre {
+  position: relative;
+  background: var(--code-bg);
+  color: #dbe4d8;
+  border-radius: 9px;
+  padding: 34px 20px 18px 20px;
+  margin: 4px 0 14px 0;
+  font-size: 15px;
+  line-height: 1.55;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* Los tres puntos de la barra de ventana */
+section pre::before {
+  content: '';
+  position: absolute;
+  top: 13px;
+  left: 16px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff5f57;
+  box-shadow: 15px 0 0 #febc2e, 30px 0 0 #28c840;
+}
+
+section pre code,
+section pre code.hljs,
+section pre code[class*='language-'] {
+  background: none !important;
+  background-color: transparent !important;
+  color: inherit;
+  font-family: var(--mono);
+  font-size: 15px;
+  padding: 0 !important;
+  margin: 0;
+  display: block;
+  border: none;
+}
+
+/* Marp envuelve el código en un <span> que también trae fondo propio */
+section pre > code > span {
+  background: none !important;
+}
+
+/* Código en línea */
+section code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  background: rgba(22, 57, 50, 0.09);
+  color: var(--verde);
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
+section.verde code,
+section.seccion code,
+section.navy code,
+section.reto code {
+  background: rgba(255, 255, 255, 0.11);
+  color: var(--acento);
+}
+
+/* Resaltado de sintaxis mínimo y sobrio */
+section pre .hljs-comment {
+  color: #6a7f74;
+  font-style: italic;
+}
+section pre .hljs-string,
+section pre .hljs-attr {
+  color: #d8ea7c;
+}
+section pre .hljs-keyword,
+section pre .hljs-built_in,
+section pre .hljs-section {
+  color: #7fd1b9;
+}
+section pre .hljs-number,
+section pre .hljs-literal {
+  color: #f0b775;
+}
+section pre .hljs-title,
+section pre .hljs-name {
+  color: #9fd6ff;
+}
+/* Sustituciones y variables dentro de cadenas: "$(id -u)", "${VAR}" */
+section pre .hljs-subst,
+section pre .hljs-variable,
+section pre .hljs-template-variable {
+  color: #7fd1b9;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tablas                                                              */
+/* ------------------------------------------------------------------ */
+
+section table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 15px;
+  margin: 4px 0 12px 0;
+}
+
+section table th {
+  background: var(--verde);
+  color: var(--blanco);
+  font-weight: 700;
+  font-size: 14px;
+  text-align: left;
+  padding: 9px 14px;
+  border: none;
+}
+
+/* Código en línea dentro de la cabecera de la tabla: fondo oscuro,
+   así que hay que invertir el color o desaparece. */
+section table th code {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--acento);
+  font-size: 0.92em;
+  padding: 1px 5px;
+}
+section.verde table th code,
+section.seccion table th code,
+section.navy table th code,
+section.reto table th code {
+  background: rgba(0, 0, 0, 0.14);
+  color: var(--tinta);
+}
+
+section table th:first-child {
+  border-top-left-radius: 7px;
+  border-bottom-left-radius: 7px;
+}
+section table th:last-child {
+  border-top-right-radius: 7px;
+  border-bottom-right-radius: 7px;
+}
+
+section table td {
+  padding: 8px 14px;
+  border: none;
+  border-bottom: 1px solid var(--gris-linea);
+  vertical-align: top;
+}
+
+section table tbody tr:nth-child(odd) td {
+  background: var(--gris-fila);
+}
+
+section table td:first-child {
+  font-weight: 700;
+}
+
+section.lima table tbody tr:nth-child(odd) td {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+section.verde table th,
+section.seccion table th,
+section.navy table th,
+section.reto table th {
+  background: var(--acento);
+  color: var(--tinta);
+}
+section.verde table td,
+section.seccion table td,
+section.navy table td,
+section.reto table td {
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+section.verde table tbody tr:nth-child(odd) td,
+section.seccion table tbody tr:nth-child(odd) td,
+section.navy table tbody tr:nth-child(odd) td,
+section.reto table tbody tr:nth-child(odd) td {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ------------------------------------------------------------------ */
+/* Utilidades de maquetación                                           */
+/* ------------------------------------------------------------------ */
+
+/* Dos columnas: <div class="cols"> ... </div> */
+.cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 34px;
+  align-items: start;
+}
+
+.cols-58 {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 34px;
+  align-items: start;
+}
+
+.cols-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 26px;
+  align-items: start;
+}
+
+/* Lista numerada al estilo 01 / 02 / 03 de la plantilla */
+.pasos {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.pasos > div {
+  display: grid;
+  grid-template-columns: 46px 1fr;
+  gap: 20px;
+  align-items: baseline;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--gris-linea);
+}
+
+.pasos b {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--verde);
+}
+
+section.verde .pasos > div,
+section.seccion .pasos > div,
+section.navy .pasos > div,
+section.reto .pasos > div {
+  border-bottom-color: rgba(255, 255, 255, 0.14);
+}
+
+section.verde .pasos b,
+section.seccion .pasos b,
+section.navy .pasos b,
+section.reto .pasos b {
+  color: var(--acento);
+}
+
+/* Frase destacada centrada */
+.destacado {
+  text-align: center;
+  font-size: 24px;
+  line-height: 1.42;
+  max-width: 720px;
+  margin: 26px auto 0 auto;
+  font-weight: 400;
+}
+
+/* Aviso / caja de advertencia */
+.aviso {
+  border-left: 3px solid var(--acento-fuerte);
+  background: rgba(195, 220, 78, 0.14);
+  padding: 11px 16px;
+  border-radius: 0 7px 7px 0;
+  font-size: 16px;
+  margin: 10px 0;
+}
+
+section.navy .aviso,
+section.reto .aviso,
+section.verde .aviso,
+section.seccion .aviso {
+  background: rgba(216, 234, 124, 0.1);
+}
+
+/* Etiqueta pequeña sobre un bloque, tipo "Comando" */
+.etiqueta {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+  margin-bottom: 5px;
+}
+
+section.navy .etiqueta,
+section.reto .etiqueta,
+section.verde .etiqueta,
+section.seccion .etiqueta {
+  color: #8b9cb2;
+}
+
+/* Píldora de duración / tipo de ejercicio */
+.pill {
+  display: inline-block;
+  background: var(--acento);
+  color: var(--tinta);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 3px 11px;
+  border-radius: 11px;
+  margin-right: 7px;
+}
+
+/* Diagrama ASCII: sin barra de ventana, más discreto */
+.diagrama pre,
+pre.diagrama {
+  background: var(--gris-fila);
+  color: var(--tinta);
+  font-size: 13px;
+  line-height: 1.35;
+  padding: 16px 18px;
+  box-shadow: none;
+  border: 1px solid var(--gris-linea);
+}
+
+.diagrama pre::before,
+pre.diagrama::before {
+  display: none;
+}
+
+/* Texto más pequeño para diapositivas densas */
+section.denso {
+  font-size: 17px;
+}
+section.denso pre,
+section.denso pre code {
+  font-size: 13.5px;
+}
+section.denso table {
+  font-size: 13.5px;
+}
+section.denso table th {
+  font-size: 13px;
+  padding: 7px 11px;
+}
+section.denso table td {
+  padding: 6px 11px;
+}
+
+/* Centrado vertical del contenido */
+section.centrada {
+  justify-content: center;
+}
+
+/* Oculta el filete y el pie en portadas si hiciera falta */
+section.limpia::before {
+  display: none;
+}
