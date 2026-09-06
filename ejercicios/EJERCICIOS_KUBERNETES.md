@@ -254,6 +254,80 @@ declaras **se mantiene solo**.
 4. **Borra uno de los Pods del Deployment.** ¿Y ahora?
 5. Escala a 5 réplicas sin editar el archivo.
 
+### Pista
+
+Un manifiesto siempre tiene los mismos cuatro bloques: `apiVersion`, `kind`,
+`metadata` (con al menos un `name`) y `spec`. Para un Pod, lo único que
+necesita el `spec` es una lista `containers` con `name`, `image` y
+`ports.containerPort` (el puerto que tu `Dockerfile` expone con `EXPOSE`). El
+Deployment **no es un objeto nuevo que aprender**: es un `spec.template` que
+contiene exactamente ese mismo Pod, más `replicas` y un `selector` que debe
+usar la misma label que pongas en `template.metadata.labels`.
+
+### Guía paso a paso
+
+1. Copia este esqueleto como `01-pod.yaml` y rellena los `<...>`:
+
+   ```yaml
+   apiVersion: v1
+   kind: Pod
+   metadata:
+     name: <nombre-libre-para-el-pod>
+     labels:
+       app: <etiqueta-para-agrupar-luego>
+   spec:
+     containers:
+       - name: <nombre-libre-para-el-contenedor>
+         image: <TU_USUARIO/mi-pipeline:1.0>
+         ports:
+           - containerPort: <puerto-que-expone-tu-imagen>
+   ```
+
+2. `kubectl apply -f 01-pod.yaml` y `kubectl get pods`. Si se queda en
+   `ImagePullBackOff`, revisa el nombre de la imagen antes de seguir.
+
+   > **¿No publicaste la imagen en Docker Hub?** Kubernetes solo sabe tirar
+   > de registries, nunca mira tu Docker local. Si construiste la imagen sin
+   > `docker push` (por ejemplo `docker build -t mi-pipeline:1.0 .`, sin
+   > prefijo de usuario), tienes que meterla tú mismo dentro de minikube con
+   > `minikube image load mi-pipeline:1.0`, y añadir
+   > `imagePullPolicy: IfNotPresent` al contenedor para que no intente
+   > descargarla de internet.
+
+3. `kubectl delete pod <nombre>` y comprueba con `kubectl get pods` que no
+   vuelve solo.
+4. Para `02-deployment.yaml`, reutiliza el mismo bloque `containers` de arriba
+   dentro de esta estructura (no lo escribas desde cero):
+
+   ```yaml
+   apiVersion: apps/v1
+   kind: Deployment
+   metadata:
+     name: <nombre-libre-para-el-deployment>
+   spec:
+     replicas: <numero-de-copias>
+     selector:
+       matchLabels:
+         app: <misma-etiqueta-que-abajo>
+     template:
+       metadata:
+         labels:
+           app: <misma-etiqueta-que-arriba>
+       spec:
+         containers:
+           - name: <...>
+             image: <...>
+             ports:
+               - containerPort: <...>
+   ```
+
+   La clave que rompe el 90% de los Deployments mal escritos:
+   `spec.selector.matchLabels.app` y `spec.template.metadata.labels.app`
+   **tienen que ser idénticos, letra por letra**. Si no coinciden, el
+   Deployment se crea sin error visible pero no gestiona ningún Pod.
+5. Borra un Pod del Deployment (no el Deployment entero) y observa que
+   aparece uno nuevo. Luego `kubectl scale deployment <nombre> --replicas=5`.
+
 ### Solución
 
 <details>
@@ -366,6 +440,47 @@ Kubernetes no se puede conectar nada con nada.
 4. Accede a la API **desde dentro** del cluster, usando el nombre DNS.
 5. Accede **desde tu navegador** con `port-forward` en el puerto 8090.
 
+### Pista
+
+Un Service no "contiene" Pods ni los referencia por nombre: los encuentra
+**en tiempo real** buscando cuáles tienen las labels indicadas en
+`spec.selector`. Por eso el campo más importante de todo el YAML es que ese
+`selector` coincida con las `labels` del Deployment del Ejercicio 1. El
+Service también tiene dos puertos distintos y es fácil confundirlos: `port`
+(por donde se llama al Service) y `targetPort` (el puerto real del
+contenedor, el mismo `containerPort` de antes).
+
+### Guía paso a paso
+
+1. Antes de escribir YAML, comprueba el problema que vas a resolver:
+   `kubectl get pods -l app=api -o wide` dos veces, borrando un Pod entre
+   medias, para ver que la IP cambia.
+2. Escribe `03-service.yaml` con este esqueleto:
+
+   ```yaml
+   apiVersion: v1
+   kind: Service
+   metadata:
+     name: <nombre-del-service>
+   spec:
+     type: ClusterIP
+     selector:
+       app: <la-misma-label-que-usaste-en-el-deployment-del-ej-1>
+     ports:
+       - port: <puerto-para-llamar-al-service>
+         targetPort: <containerPort-de-tu-contenedor>
+   ```
+
+3. Aplica y comprueba que **encontró** los Pods antes de probar nada más:
+   `kubectl describe svc <nombre>` → mira la línea `Endpoints`. Si pone
+   `<none>`, el `selector` no coincide con ninguna label: no sigas hasta
+   arreglarlo.
+4. Desde dentro del cluster, el nombre del Service **es** su DNS:
+   `kubectl run curl-test --image=curlimages/curl -it --rm --restart=Never --
+   curl -s http://<nombre-del-service>`.
+5. Desde tu máquina: `kubectl port-forward svc/<nombre-del-service>
+   8090:<port-del-service>`.
+
 ### Solución
 
 <details>
@@ -462,6 +577,61 @@ preproducción y producción. Lo único que cambia es la configuración inyectad
 3. Comprueba que las variables llegaron dentro del contenedor.
 4. Cambia `BATCH_SIZE` a 20, aplica, y comprueba el efecto en la API.
 5. Demuestra que un Secret **no está cifrado**.
+
+### Pista
+
+Un ConfigMap es literalmente un diccionario `clave: "valor"` bajo `data`. Un
+Secret es igual, solo que su bloque se llama `stringData` (para que puedas
+escribir el valor en texto plano y que Kubernetes lo pase a base64 por ti).
+Ninguno de los dos "hace" nada por sí solo: hay que decirle al contenedor que
+los lea, con `envFrom` dentro del mismo `containers[].` donde ya tienes
+`image` y `ports` en `02-deployment.yaml`. Y como los procesos leen sus
+variables de entorno **una sola vez, al arrancar**, cambiar el ConfigMap no
+basta: hay que forzar a los Pods a reiniciarse.
+
+### Guía paso a paso
+
+1. Escribe `04-config.yaml` con dos documentos separados por `---`:
+
+   ```yaml
+   apiVersion: v1
+   kind: ConfigMap
+   metadata:
+     name: <nombre-libre>
+   data:
+     BATCH_SIZE: "<numero-entre-comillas>"
+     DB_HOST: "<nombre-del-service-de-postgres-que-usarás-en-el-ej-4>"
+     POSTGRES_USER: "<usuario>"
+     POSTGRES_DB: "<nombre-bd>"
+   ---
+   apiVersion: v1
+   kind: Secret
+   metadata:
+     name: <nombre-libre>
+   type: Opaque
+   stringData:
+     POSTGRES_PASSWORD: "<contraseña-en-texto-plano>"
+   ```
+
+2. Edita `02-deployment.yaml` del Ejercicio 1: dentro del contenedor `api`,
+   al mismo nivel que `image` y `ports`, añade:
+
+   ```yaml
+           envFrom:
+             - configMapRef:
+                 name: <el-name-del-configmap-de-arriba>
+             - secretRef:
+                 name: <el-name-del-secret-de-arriba>
+   ```
+
+3. `kubectl apply -f 04-config.yaml && kubectl apply -f 02-deployment.yaml`,
+   luego `kubectl exec deploy/<nombre> -- env | grep -E "BATCH_|POSTGRES_|DB_"`
+   para confirmar que llegaron.
+4. `kubectl edit configmap <nombre>` para subir `BATCH_SIZE`, y
+   `kubectl rollout restart deployment <nombre>` — este comando es el que
+   fuerza a los Pods a releer la configuración.
+5. `kubectl get secret <nombre> -o jsonpath='{.data.POSTGRES_PASSWORD}' |
+   base64 -d` para ver la contraseña en claro.
 
 ### Solución
 
@@ -564,6 +734,102 @@ del ejercicio siguiente.
 
 > ⚠️ Igual que en Docker: en PostgreSQL 18 la ruta de datos es
 > `/var/lib/postgresql`, no `/var/lib/postgresql/data`.
+
+### Pista
+
+Este ejercicio junta tres objetos en un solo archivo, pero cada uno ya lo has
+visto: el PVC es solo una "solicitud de disco" (`accessModes` +
+`resources.requests.storage`); el Deployment es el mismo patrón del
+Ejercicio 1 pero con un `volumeMounts` dentro del contenedor y un `volumes` al
+nivel de `spec.template.spec` que los conecta por `name`; y el Service es
+idéntico al del Ejercicio 2, apuntando ahora al puerto 5432. El PVC no se
+"inyecta" solo: el nombre en `volumes[].persistentVolumeClaim.claimName` debe
+ser exactamente el `metadata.name` del PVC.
+
+### Guía paso a paso
+
+1. El PVC, la pieza más pequeña:
+
+   ```yaml
+   apiVersion: v1
+   kind: PersistentVolumeClaim
+   metadata:
+     name: <nombre-libre>
+   spec:
+     accessModes:
+       - ReadWriteOnce
+     resources:
+       requests:
+         storage: <cantidad, ej. 1Gi>
+   ```
+
+2. El Deployment de Postgres. Fíjate en las **dos** referencias cruzadas:
+   `volumeMounts[].name` debe coincidir con `volumes[].name` (no con el PVC),
+   y `volumes[].persistentVolumeClaim.claimName` debe coincidir con el
+   `metadata.name` del PVC del paso 1.
+
+   ```yaml
+   apiVersion: apps/v1
+   kind: Deployment
+   metadata:
+     name: <nombre-libre>
+   spec:
+     replicas: 1
+     selector:
+       matchLabels:
+         app: <etiqueta>
+     template:
+       metadata:
+         labels:
+           app: <misma-etiqueta>
+       spec:
+         containers:
+           - name: <...>
+             image: postgres:18-alpine
+             ports:
+               - containerPort: 5432
+             envFrom:
+               - configMapRef:
+                   name: <el-configmap-del-ej-3>
+               - secretRef:
+                   name: <el-secret-del-ej-3>
+             volumeMounts:
+               - name: <nombre-de-enlace-con-volumes>
+                 mountPath: /var/lib/postgresql
+             readinessProbe:
+               exec:
+                 command: ["pg_isready", "-U", "<mismo-POSTGRES_USER-del-configmap>"]
+               initialDelaySeconds: 5
+               periodSeconds: 5
+         volumes:
+           - name: <mismo-nombre-de-enlace-de-arriba>
+             persistentVolumeClaim:
+               claimName: <name-del-pvc-del-paso-1>
+   ```
+
+3. El Service, calcado del Ejercicio 2 pero sin `port-forward` (no lo
+   necesitas: solo lo usarán otros Pods del cluster):
+
+   ```yaml
+   apiVersion: v1
+   kind: Service
+   metadata:
+     name: <debe-coincidir-con-el-DB_HOST-que-pusiste-en-el-configmap>
+   spec:
+     selector:
+       app: <misma-etiqueta-del-deployment-de-postgres>
+     ports:
+       - port: 5432
+         targetPort: 5432
+   ```
+
+4. Aplica y espera: `kubectl get pvc` (de `Pending` a `Bound`) y
+   `kubectl get pods -l app=<etiqueta>` (a `1/1 Running`). Si el PVC se queda
+   en `Pending`, revisa el Apéndice de errores al final del documento.
+5. Crea una fila con `kubectl exec -it deploy/<nombre> -- psql -U <usuario>
+   -d <bd> -c "CREATE TABLE prueba(id INT, nota TEXT); INSERT INTO prueba
+   VALUES (1, 'sobrevive?');"`, borra el Pod (`kubectl delete pod -l
+   app=<etiqueta>`) y repite el `SELECT` cuando el nuevo esté listo.
 
 ### Solución
 
@@ -698,6 +964,81 @@ completo, no un ejemplo de juguete.**
    minutos**.
 4. Observa cómo van apareciendo Jobs nuevos y cómo crece la tabla.
 5. Lanza una ejecución manual del CronJob sin esperar al horario.
+
+### Pista
+
+Un Job es casi un Deployment sin `replicas` ni self-healing continuo: en vez
+de "mantener siempre N Pods vivos", su contrato es "ejecuta esto hasta que
+termine con éxito". Por eso lleva `restartPolicy: OnFailure` en vez de nada
+(el valor por defecto, `Always`, no tendría sentido para algo que debe
+acabar). El `command` es lo único realmente nuevo: sobrescribe el `CMD` de tu
+imagen para que, en vez de arrancar `api.py`, ejecute `pipeline.py`. El
+CronJob no es un objeto distinto: es un Job envuelto en un `jobTemplate` con
+un `schedule` delante.
+
+### Guía paso a paso
+
+1. `06-job.yaml` — parte del contenedor que ya conoces del Ejercicio 3/4 y
+   cambia solo tres cosas: quita `ports`, añade `command`, y envuélvelo en
+   `spec.template.spec` con `restartPolicy: OnFailure`:
+
+   ```yaml
+   apiVersion: batch/v1
+   kind: Job
+   metadata:
+     name: <nombre-libre>
+   spec:
+     backoffLimit: <cuantos-reintentos-si-falla>
+     template:
+       spec:
+         restartPolicy: OnFailure
+         containers:
+           - name: <...>
+             image: <TU_USUARIO/mi-pipeline:1.0>
+             command: ["python", "pipeline.py"]
+             envFrom:
+               - configMapRef:
+                   name: <el-configmap-del-ej-3>
+               - secretRef:
+                   name: <el-secret-del-ej-3>
+   ```
+
+2. Aplica, y sigue la pista de siempre: `kubectl logs job/<nombre>` antes de
+   ir a mirar la base de datos. Si falla, casi siempre es `DB_HOST` mal o
+   Postgres no listo todavía (revisa el Apéndice de errores).
+3. `07-cronjob.yaml` — coge el `spec` entero del Job del paso 1 y méetelo tal
+   cual dentro de `jobTemplate.spec`, añadiendo `schedule` al nivel de arriba:
+
+   ```yaml
+   apiVersion: batch/v1
+   kind: CronJob
+   metadata:
+     name: <nombre-libre>
+   spec:
+     schedule: "<expresión cron, ej. */2 * * * * = cada 2 min>"
+     successfulJobsHistoryLimit: <cuantos Jobs completados conservar>
+     failedJobsHistoryLimit: <cuantos Jobs fallidos conservar>
+     jobTemplate:
+       spec:
+         backoffLimit: <...>
+         template:
+           spec:
+             restartPolicy: OnFailure
+             containers:
+               - name: <...>
+                 image: <...>
+                 command: ["python", "pipeline.py"]
+                 envFrom:
+                   - configMapRef:
+                       name: <...>
+                   - secretRef:
+                       name: <...>
+   ```
+
+4. `kubectl get jobs -w` y espera sin tocar nada: cada 2 minutos debe
+   aparecer un Job nuevo solo.
+5. Para no esperar: `kubectl create job --from=cronjob/<nombre-del-cronjob>
+   <nombre-libre-para-esta-ejecución>`.
 
 ### Solución
 
@@ -858,6 +1199,34 @@ volver atrás si algo sale mal.
 2. Actualiza el Deployment de la API a esa versión y observa el rollout.
 3. Comprueba el historial y haz **rollback**.
 4. Provoca un fallo: despliega una imagen que no existe. Observa qué pasa.
+
+### Pista
+
+Aquí no escribes YAML nuevo: reutilizas el Deployment `api` del Ejercicio 1 y
+lo modificas con comandos. La clave es `kubectl set image
+deployment/<nombre> <nombre-del-contenedor>=<nueva-imagen>` — el
+`<nombre-del-contenedor>` es el que pusiste en `containers[].name`, no el
+nombre del Deployment. Kubernetes sustituye los Pods **de uno en uno**
+(rolling update) para no dejar nunca el servicio a cero.
+
+### Guía paso a paso
+
+1. Cambia algo pequeño y visible en `generador.py` (por ejemplo, añade una
+   columna nueva al DataFrame) y publica `TU_USUARIO/mi-pipeline:1.1`.
+
+   > **Sin Docker Hub**: construye `mi-pipeline:1.1` sin prefijo de usuario y
+   > cárgala directamente con `minikube image load mi-pipeline:1.1` — no
+   > hace falta `docker push` para que el cluster la vea.
+
+2. `kubectl set image deployment/<nombre-deployment>
+   <nombre-contenedor>=TU_USUARIO/mi-pipeline:1.1` y sigue el proceso con
+   `kubectl rollout status deployment/<nombre>` y `kubectl get pods -l
+   app=api -w` en paralelo.
+3. `kubectl rollout history deployment/<nombre>` para ver las revisiones, y
+   `kubectl rollout undo deployment/<nombre>` para volver a la anterior.
+4. Repite el paso 2 pero con una imagen que no exista
+   (`TU_USUARIO/mi-pipeline:99.99`) y compara `kubectl get pods` con lo que
+   sirve `http://localhost:8090` mientras tanto. Deshaz con `rollout undo`.
 
 ### Solución
 
